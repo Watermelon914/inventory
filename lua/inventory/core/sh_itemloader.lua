@@ -119,7 +119,10 @@ function inventorySystem.DeleteItem(item)
 
     if IsValid(item.InventoryLocation) then
         local inventory = item.InventoryLocation
-        inventory:RemoveItem(item.SlotLocation)
+
+        if inventory:GetItem(item.SlotLocation) == item then
+            inventory:RemoveItem(item.SlotLocation)
+        end
     end
 
     if IsValid(item.ItemLocation) then

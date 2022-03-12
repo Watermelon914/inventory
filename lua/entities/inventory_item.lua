@@ -8,7 +8,7 @@ function ENT:Initialize()
         if SERVER then
             self:Remove()
         elseif self:GetItemId() then
-            self.Item = inventorySystem.GetItemFromId(self:GetItemId(), "base_item")
+            self.Item = inventorySystem.GetItemFromId(self:GetItemId(), "item_loading")
         end
     end
 
@@ -48,7 +48,7 @@ function ENT:SetupDataTables()
 end
 
 function ENT:OnStateChanged(name, old, new)
-    local item = inventorySystem.GetItemFromId(old, "base_item")
+    local item = inventorySystem.GetItemFromId(old, "item_loading")
 
     if IsValid(item) and item.ItemLocation == self then
         item.ItemLocation = nil
@@ -60,7 +60,7 @@ function ENT:OnStateChanged(name, old, new)
         return
     end
 
-    self.Item = inventorySystem.GetItemFromId(new, "base_item")
+    self.Item = inventorySystem.GetItemFromId(new, "item_loading")
 
     if not IsValid(self.Item) then
         error("Set " .. self.ClassName .. " to an invalid item! (expected item, got " .. type(self.Item) .. ")")
@@ -92,7 +92,7 @@ if SERVER then
     end
 
     function ENT:PerformTakenAnimation(plyTaker)
-        net.Start("inventorySystem.PerformItemAnimation", true)
+        net.Start("inventorySystem.PerformItemAnimation")
         net.WriteString(self:GetModel())
         net.WriteVector(self:GetPos())
         net.WriteAngle(self:GetAngles())
@@ -109,14 +109,15 @@ else
         local from = net.ReadVector()
         local angle = net.ReadAngle()
         local plyTaker = net.ReadEntity()
-        if LocalPlayer() == plyTaker then return end
+        -- if LocalPlayer() == plyTaker then return end
         local renderData = {}
         renderData.IsValid = function(self) return not renderData.Finished end
         renderData.Model = ClientsideModel(model, RENDERGROUP_OTHER)
         renderData.CurrentPos = from
         renderData.CurrentAngle = angle
-        renderData.Speed = 3
+        renderData.Speed = 0.9
         renderData.CurrentMatrix = Matrix()
+        renderData.StartTime = CurTime()
 
         renderData.Finish = function(self)
             self.Finished = true
@@ -126,7 +127,8 @@ else
         local bone = plyTaker:LookupBone("ValveBiped.Bip01_Spine")
 
         hook.Add("PostDrawOpaqueRenderables", renderData, function(self, drawingDepth, drawingSkybox)
-            local distance = self.CurrentPos:Distance(plyTaker:GetBonePosition(bone))
+            local position = bone and plyTaker:GetBonePosition(bone) or plyTaker:GetPos()
+            local distance = self.CurrentPos:Distance(position)
 
             if not IsValid(plyTaker) or distance > 300 then
                 self:Finish()
@@ -138,12 +140,12 @@ else
             local scaleMatrix = Matrix()
             scaleMatrix:SetScale(Vector(1, 1, 1) * math.min(distance / 100, 1))
             self.Model:EnableMatrix("RenderMultiply", scaleMatrix)
-            self.CurrentPos = LerpVector(self.Speed * FrameTime(), self.CurrentPos, plyTaker:GetBonePosition(bone))
+            self.CurrentPos = LerpVector(1 - math.pow(self.Speed, CurTime() - self.StartTime), self.CurrentPos, position)
             self.Model:SetPos(self.CurrentPos)
             self.Model:SetAngles(self.CurrentAngle)
             self.Model:DrawModel()
 
-            if distance < 1 then
+            if distance < 5 then
                 self:Finish()
 
                 return

@@ -58,9 +58,9 @@ local function CreateInventoryUI(inventory, sizeX, sizeY)
         end
     end
 
-    InventoryPanel.UpdateData = function(self, updatedInventory)
-        for slot, panel in pairs(allSlots) do
-            panel:GenerateItem(updatedInventory)
+    InventoryPanel.UpdateData = function(self, updatedInventory, slots)
+        for _, slot in ipairs(slots) do
+            allSlots[slot]:GenerateItem(updatedInventory)
         end
     end
 

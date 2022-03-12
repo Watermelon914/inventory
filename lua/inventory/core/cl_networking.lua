@@ -1,3 +1,8 @@
+hook.Add("InitPostEntity", inventorySystem, function(self)
+    net.Start("inventorySystem.Update")
+    net.SendToServer()
+end)
+
 net.Receive("inventorySystem.Update", function(len)
     local inventoryId = net.ReadUInt(16)
     local parent = net.ReadEntity()
@@ -8,18 +13,31 @@ net.Receive("inventorySystem.Update", function(len)
 
     for slot, id in pairs(data) do
         if id ~= -1 then
-            contents[slot] = inventorySystem.GetItemFromId(id, "base_item")
+            local item = inventorySystem.GetItemFromId(id, "item_loading")
+
+            if not IsValid(item) then
+                contents[slot] = nil
+                continue
+            end
+
+            contents[slot] = item
             contents[slot]:AddToInventory(inventory, slot)
         else
             contents[slot] = nil
         end
     end
 
-    if parent == LocalPlayer() then
-        inventorySystem.UpdatePlayerInventory(inventory)
-        inventorySystem.localPlayerInventory = inventory
-    elseif IsValid(inventory.InventoryUI) then
-        inventory.InventoryUI:UpdateData(inventory)
+    for slot, info in pairs(contents) do
+        print(slot, info)
+    end
+
+    if parent == LocalPlayer() and inventorySystem.InitializedUI ~= true then
+        inventorySystem.GenerateInventoryUI(inventorySystem, inventory)
+        inventory.InventoryUI = inventorySystem.holdingFrame
+    end
+
+    if IsValid(inventory.InventoryUI) then
+        inventory.InventoryUI:UpdateData(inventory, table.GetKeys(data))
     end
 end)
 
@@ -29,11 +47,12 @@ net.Receive("inventorySystem.UpdateItem", function(len)
     local metadata = inventorySystem.items[itemClass]
     local item = inventorySystem.GetItemFromId(itemId, itemClass)
 
-    if getmetatable(item) == inventorySystem.items["base_item"] and itemClass ~= "base_item" then
+    if itemClass ~= item:GetClass() then
         setmetatable(item, metadata)
+        local inventory = item.InventoryLocation
 
-        if item.InventoryLocation then
-            inventorySystem.UpdatePlayerInventory(item.InventoryLocation)
+        if IsValid(inventory) and IsValid(inventory.InventoryUI) and inventory:GetItem(item.SlotLocation) == item then
+            item.InventoryUI:UpdateData(inventory, {item.SlotLocation})
         end
     end
 
@@ -94,7 +113,5 @@ end)
 local inventoryMeta = inventorySystem.inventoryMeta
 
 function inventoryMeta:SendUpdateToPlayer(slots, players)
-    if self:GetParent() == LocalPlayer() then
-        inventorySystem.UpdatePlayerInventory(inventory)
-    end
+    return
 end

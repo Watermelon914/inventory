@@ -131,7 +131,6 @@ function inventoryMeta:AddItem(slot, item)
     item:AddToInventory(self, slot)
     self.Contents[slot] = item
     local listeners = self:GetListeners()
-    item:SendFullUpdate(listeners)
 
     self:SendUpdateToPlayer({slot}, listeners)
 

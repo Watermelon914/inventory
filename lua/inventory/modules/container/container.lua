@@ -6,9 +6,11 @@ function containerSystem:IsValid()
 end
 
 AddCSLuaFile("cl_container.lua")
+AddCSLuaFile("container_editor.lua")
 
 if CLIENT then
     include("cl_container.lua")
+    include("container_editor.lua")
 else
     include("sv_container.lua")
 end

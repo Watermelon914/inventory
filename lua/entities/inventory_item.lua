@@ -97,6 +97,7 @@ if SERVER then
         net.WriteVector(self:GetPos())
         net.WriteAngle(self:GetAngles())
         net.WriteEntity(plyTaker)
+        net.WriteFloat(1.11)
         net.SendPVS(self:GetPos())
     end
 else
@@ -109,13 +110,14 @@ else
         local from = net.ReadVector()
         local angle = net.ReadAngle()
         local plyTaker = net.ReadEntity()
+        local speed = net.ReadFloat()
         -- if LocalPlayer() == plyTaker then return end
         local renderData = {}
         renderData.IsValid = function(self) return not renderData.Finished end
         renderData.Model = ClientsideModel(model, RENDERGROUP_OTHER)
         renderData.CurrentPos = from
         renderData.CurrentAngle = angle
-        renderData.Speed = 0.9
+        renderData.Speed = 1 / speed
         renderData.CurrentMatrix = Matrix()
         renderData.StartTime = CurTime()
 
@@ -125,6 +127,7 @@ else
         end
 
         local bone = plyTaker:LookupBone("ValveBiped.Bip01_Spine")
+        renderData.OriginalDistance = (bone and plyTaker:GetBonePosition(bone) or plyTaker:GetPos()):Distance(renderData.CurrentPos)
 
         hook.Add("PostDrawOpaqueRenderables", renderData, function(self, drawingDepth, drawingSkybox)
             local position = bone and plyTaker:GetBonePosition(bone) or plyTaker:GetPos()
@@ -138,7 +141,7 @@ else
 
             render.SetBlend(math.min(distance / 100, 1))
             local scaleMatrix = Matrix()
-            scaleMatrix:SetScale(Vector(1, 1, 1) * math.min(distance / 100, 1))
+            scaleMatrix:SetScale(Vector(1, 1, 1) * math.min(distance / self.OriginalDistance, 1))
             self.Model:EnableMatrix("RenderMultiply", scaleMatrix)
             self.CurrentPos = LerpVector(1 - math.pow(self.Speed, CurTime() - self.StartTime), self.CurrentPos, position)
             self.Model:SetPos(self.CurrentPos)

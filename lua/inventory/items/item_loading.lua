@@ -16,6 +16,14 @@ function ITEM:DrawLoading(width, height)
     draw.DrawText(text, "item_title_text", width / 2, (height - y) / 2, self:GetTypeColor(), TEXT_ALIGN_CENTER)
 end
 
+function ITEM:OnDermaGain(panel)
+end
+
+function ITEM:OnDermaDescGain(panel)
+    panel.SizeX = 80
+    panel.SizeY = 40
+end
+
 function ITEM:DrawItemDescBox(panel, width, height)
     self:DrawBackground(width, height, true)
     self:DrawLoading(width, height)

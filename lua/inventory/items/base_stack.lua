@@ -4,13 +4,6 @@ ITEM.Base = "base_item"
 ITEM.MaxStack = 10
 ITEM.DrawModelMode = inventorySystem.DRAW_MODEL_FORWARD
 
-function inventorySystem.MakeStackModel(model, offset)
-    return {
-        model = model,
-        offset = offset or Vector(0, 0, 0)
-    }
-end
-
 ITEM.StackModels = {
     inventorySystem.MakeStackModel("models/props_junk/cardboard_box004a.mdl");
     inventorySystem.MakeStackModel("models/props_junk/cardboard_box001a.mdl");
@@ -102,6 +95,7 @@ function ITEM:JoinStack(stackItem)
 end
 
 function ITEM:GenerateRightClickMenu(menu)
+    if self:GetAmount() <= 1 then return end
     local subMenu, panel = menu:AddSubMenu("Split into..", inventorySystem.CreateAction(self, "split_custom"))
     panel:SetIcon("icon16/package_go.png")
     subMenu:AddOption("1", inventorySystem.CreateAction(self, "split_1")):SetIcon("icon16/bullet_blue.png")
@@ -146,6 +140,17 @@ end
 
 function ITEM:ReceiveDropped(item)
     if item:GetClass() == self:GetClass() and self:JoinStack(item) then return true end
+end
+
+function ITEM:DrawHover(item, w, h)
+    if item:GetClass() == self:GetClass() and self:GetAmount() < self.MaxStack and item ~= self and item:GetAmount() < item.MaxStack then
+        surface.SetAlphaMultiplier(0.1)
+        surface.SetDrawColor(self:GetTypeColor())
+        surface.DrawRect(0, 0, w, h)
+        surface.SetAlphaMultiplier(1)
+    else
+        BaseClass.DrawHover(self, item, w, h)
+    end
 end
 
 local white = Color(255, 255, 255)

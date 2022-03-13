@@ -1,24 +1,24 @@
-ITEM.Name = "Health Vial"
-ITEM.Description = "Provides the player with 10 HP"
+ITEM.Name = "Armor Battery"
+ITEM.Description = "Provides the player with 10 armor"
 ITEM.Base = "base_stack"
-ITEM.Model = "models/Items/HealthKit.mdl"
+ITEM.Model = "models/Items/battery.mdl"
 ITEM.Category = "HL2"
 ITEM.Spawnable = true
-ITEM.ItemType = "Health"
+ITEM.ItemType = "Armor"
 ITEM.DrawModelMode = inventorySystem.DRAW_MODEL_TOP
-ITEM.AmountToHeal = 10
+ITEM.ArmorToGive = 10
 ITEM.MaxStack = 3
 
 ITEM.StackModels = {
-    inventorySystem.MakeStackModel("models/healthvial.mdl");
-    inventorySystem.MakeStackModel("models/Items/HealthKit.mdl", Vector(-7, 0, -3));
+    inventorySystem.MakeStackModel("models/Items/battery.mdl");
+    inventorySystem.MakeStackModel("models/props_lab/reciever01b.mdl");
 }
 
 DEFINE_BASECLASS("base_stack")
 
 function ITEM:Initialize()
     BaseClass.Initialize(self)
-    self.TypeColor = Color(32, 128, 32)
+    self.TypeColor = Color(32, 32, 128)
 end
 
 function ITEM:GenerateRightClickMenu(menu)
@@ -37,12 +37,12 @@ end
 
 function ITEM:HealPlayer(ply)
     if ply:Health() >= ply:GetMaxHealth() then
-        ply:EmitSound("items/medshotno1.wav")
+        ply:EmitSound("items/suitchargeno1.wav")
 
         return
     end
 
     if not self:Use(1) then return end
-    ply:SetHealth(math.min(ply:GetMaxHealth(), ply:Health() + self.AmountToHeal))
-    ply:EmitSound("items/smallmedkit1.wav")
+    ply:SetArmor(math.min(ply:GetMaxArmor(), ply:Armor() + self.ArmorToGive))
+    ply:EmitSound("items/battery_pickup.wav")
 end

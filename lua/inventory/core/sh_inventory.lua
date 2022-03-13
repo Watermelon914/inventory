@@ -15,11 +15,13 @@ function inventoryMeta:SetParent(entity)
 
     self.Parent = entity
 
-    self.Parent:CallOnRemove("inventory" .. self:GetInventoryId(), function(ent)
-        if self.Parent == ent then
-            self:Remove()
-        end
-    end)
+    if not CLIENT then
+        self.Parent:CallOnRemove("inventory" .. self:GetInventoryId(), function(ent)
+            if self.Parent == ent then
+                self:Remove()
+            end
+        end)
+    end
 
     if SERVER then
         if entity:IsPlayer() then

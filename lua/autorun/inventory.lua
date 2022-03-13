@@ -14,7 +14,6 @@ local function LoadCore()
     AddCSLuaFile(core .. "sh_inventory.lua")
     AddCSLuaFile(core .. "cl_networking.lua")
     AddCSLuaFile(core .. "cl_menu.lua")
-    include(core .. "sh_itemloader.lua")
     include(core .. "sh_inventory.lua")
 
     if CLIENT then
@@ -41,3 +40,4 @@ local function LoadModules()
 end
 
 LoadModules()
+include(core .. "sh_itemloader.lua")

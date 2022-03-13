@@ -102,9 +102,9 @@ net.Receive("inventorySystem.Movement", function(len, ply)
     if not IsValid(itemInventory:GetParent()) or not IsValid(targetInventory:GetParent()) then return end
     if itemInventory:GetPos():DistToSqr(targetInventory:GetPos()) > math.pow(inventorySystem.InteractionRange, 2) then return end
     if hook.Run("inventorySystem.CanTransferTo", itemInventory, itemSlot, targetInventory, targetSlot) == false then return end
-    local itemToCheck = targetInventory:GetItem(itemSlot)
+    local itemToCheck = itemInventory:GetItem(itemSlot)
     if not IsValid(itemToCheck) or not itemToCheck:CanAddToInventory(targetInventory, targetSlot) then return end
-    local swappingItem = itemInventory:GetItem(targetSlot)
+    local swappingItem = targetInventory:GetItem(targetSlot)
     if IsValid(swappingItem) and (not swappingItem:CanAddToInventory(itemInventory, itemSlot) or swappingItem:ReceiveDropped(itemToCheck) == true) then return end
     local removedItem = itemInventory:RemoveItem(itemSlot)
     if not IsValid(removedItem) then return end
@@ -123,6 +123,7 @@ net.Receive("inventorySystem.Movement", function(len, ply)
         net.WriteVector(position)
         net.WriteAngle(Angle(0, 0, 0))
         net.WriteEntity(toEnt)
+        net.WriteFloat(1.05)
         net.SendPVS(position)
     end
 

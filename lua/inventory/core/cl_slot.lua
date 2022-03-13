@@ -93,17 +93,25 @@ function PANEL:Think()
     end
 end
 
+local SetDrawColor = surface.SetDrawColor
+local DrawRect = surface.DrawRect
+local DrawOutlinedRect = surface.DrawOutlinedRect
+local SetFont = surface.SetFont
+local GetTextSize = surface.GetTextSize
+local DrawText = draw.DrawText
+local SetAlphaMultiplier = surface.SetAlphaMultiplier
+
 function PANEL:Paint(w, h)
-    surface.SetDrawColor(self.InternalColor)
-    surface.DrawRect(0, 0, w, h)
-    surface.SetDrawColor(self.BorderColor)
-    surface.DrawOutlinedRect(0, 0, w, h, 1)
+    SetDrawColor(self.InternalColor)
+    DrawRect(0, 0, w, h)
+    SetDrawColor(self.BorderColor)
+    DrawOutlinedRect(0, 0, w, h, 1)
 
     if self.HoverInfo and not self.Item then
-        surface.SetFont("item_slot_text")
-        local _, y = surface.GetTextSize(self.HoverInfo)
-        local color = Color(self.BorderColor.r, self.BorderColor.g, self.BorderColor.b, self.TextHoverAlpha)
-        draw.DrawText(self.HoverInfo, "item_slot_text", w / 2, h / 2 - y / 2, color, TEXT_ALIGN_CENTER)
+        SetFont("item_slot_text")
+        local _, y = GetTextSize(self.HoverInfo)
+        SetAlphaMultiplier(self.TextHoverAlpha / 255)
+        DrawText(self.HoverInfo, "item_slot_text", w / 2, h / 2 - y / 2, self.BorderColor, TEXT_ALIGN_CENTER)
     end
 end
 

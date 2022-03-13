@@ -1,3 +1,10 @@
+function inventorySystem.MakeStackModel(model, offset)
+    return {
+        model = model,
+        offset = offset or Vector(0, 0, 0)
+    }
+end
+
 local function CreateInventoryUI(inventory, sizeX, sizeY)
     local InventoryPanel = vgui.Create("DPanel", inventorySystem.backgroundFrame)
     local multiplier = inventorySystem.slotLength + inventorySystem.slotSpacing

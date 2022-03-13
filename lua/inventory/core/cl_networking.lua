@@ -29,8 +29,11 @@ net.Receive("inventorySystem.Update", function(len)
         end
     end
 
-    if parent == LocalPlayer() and inventorySystem.InitializedUI ~= true then
-        inventorySystem.GenerateInventoryUI(inventory)
+    if parent == LocalPlayer() then
+        if inventorySystem.InitializedUI ~= true then
+            inventorySystem.GenerateInventoryUI(inventory)
+        end
+
         inventory.InventoryUI = inventorySystem.holdingFrame
     end
 

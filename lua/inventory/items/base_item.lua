@@ -33,6 +33,7 @@ function ITEM:Initialize()
         self.CameraPos = Vector(0, 0, 0)
     end
 
+    self.HoveredColor = Color(80, 80, 80, 248)
     self.TrackedVariables = {}
     self:SetupNetworkedVariables()
     self.__Initialized = true
@@ -162,42 +163,49 @@ function ITEM:GetTypeColor()
     return self.TypeColor
 end
 
+local ViewAngle = Angle(25, 220, 0)
+
 function ITEM:RenderModel(x1, y1, x2, y2)
     local model = self.RenderedModel
     if not IsValid(model) then return end
-    model:SetAngles(Angle(0, 90, 0))
     model:SetModel(self.Model)
-    local minBounds, maxBounds = model:GetModelRenderBounds()
     local width = x2 - x1
     local height = y2 - y1
-    local cameraTarget = (minBounds + maxBounds) / 2
-    cameraTarget:Add(self.DrawModelOffset)
-    local size = 15
-    size = math.max(size, math.abs(minBounds.x) + math.abs(maxBounds.x))
-    size = math.max(size, math.abs(minBounds.y) + math.abs(maxBounds.y))
-    size = math.max(size, math.abs(minBounds.z) + math.abs(maxBounds.z))
-    local cameraPos = self.CameraPos
 
-    if bit.band(self.DrawModelMode, inventorySystem.DRAW_MODEL_FORWARD) ~= 0 then
-        cameraPos.x = size
-    else
-        cameraPos.x = 0
+    if self.modelRendered ~= self.Model or self.x1 ~= self.lastX1 or self.y1 ~= self.lastY1 then
+        local pos = model:GetPos()
+        local mn, mx = model:GetRenderBounds()
+        local middle = (mn + mx) * 0.5
+        local size = 0
+        size = math.max(size, math.abs(mn.x) + math.abs(mx.x))
+        size = math.max(size, math.abs(mn.y) + math.abs(mx.y))
+        size = math.max(size, math.abs(mn.z) + math.abs(mx.z))
+
+        if size < 900 then
+            size = size * (1 - (size / 900))
+        else
+            size = size * (1 - (size / 4096))
+        end
+
+        local aspectRatio = 1
+
+        if height > width then
+            aspectRatio = width / height
+        else
+            aspectRatio = height / width
+        end
+
+        size = math.Clamp(size, 5, 1000) / aspectRatio
+        self.ViewPos = pos + ViewAngle:Forward() * size * -15
+        self.CamPos = self.ViewPos + middle
+        self.ViewFOV = 4 + size * 0.04
+        self.ZFar = self.ViewPos:Distance(pos) + size * 2
+        self.lastX1 = self.x1
+        self.lastY1 = self.y1
     end
 
-    if bit.band(self.DrawModelMode, inventorySystem.DRAW_MODEL_SIDE) ~= 0 then
-        cameraPos.y = size
-    else
-        cameraPos.y = 0
-    end
-
-    if bit.band(self.DrawModelMode, inventorySystem.DRAW_MODEL_TOP) ~= 0 then
-        cameraPos.z = size
-    else
-        cameraPos.z = 0
-    end
-
-    local angle = (cameraTarget - cameraPos):Angle()
-    cam.Start3D(cameraPos, angle, math.max(size * 3, 75), x1, y1, width, height, 5)
+    self.modelRendered = self.Model
+    cam.Start3D(self.CamPos, ViewAngle, self.ViewFOV, x1, y1, width, height, 1, self.ZFar)
     render.SuppressEngineLighting(true)
     render.SetLightingOrigin(model:GetPos())
     render.ResetModelLighting(1, 1, 1)
@@ -209,30 +217,70 @@ function ITEM:RenderModel(x1, y1, x2, y2)
     cam.End3D()
 end
 
-function ITEM:DrawBackground(w, h, isDescription, borderThickness)
-    local hue, saturation, lightness = ColorToHSL(self:GetTypeColor())
+if CLIENT then
+    local SetDrawColor = surface.SetDrawColor
+    local DrawRect = surface.DrawRect
+    local DrawOutlinedRect = surface.DrawOutlinedRect
+    local SetFont = surface.SetFont
+    local GetTextSize = surface.GetTextSize
+    local DrawText = draw.DrawText
 
-    if not self.BGInvisiblie or isDescription then
-        if self.TypeLightBGLighter then
-            if lightness < 1 - self.TypeLightBGDifference then
-                lightness = lightness + self.TypeLightBGDifference
+    function ITEM:DrawBackground(w, h, isDescription, borderThickness, hovered)
+        if not self.BGInvisiblie or isDescription then
+            local hue, saturation, lightness = ColorToHSL(self:GetTypeColor())
+
+            if self.TypeLightBGLighter then
+                if lightness < 1 - self.TypeLightBGDifference then
+                    lightness = lightness + self.TypeLightBGDifference
+                else
+                    lightness = 1
+                end
             else
-                lightness = 1
+                if lightness > self.TypeLightBGDifference then
+                    lightness = lightness - self.TypeLightBGDifference
+                else
+                    lightness = 0
+                end
             end
-        else
-            if lightness > self.TypeLightBGDifference then
-                lightness = lightness - self.TypeLightBGDifference
-            else
-                lightness = 0
+
+            SetDrawColor(HSVToColor(hue, saturation, lightness))
+            DrawRect(0, 0, w, h)
+        end
+
+        if hovered and dragndrop.IsDragging() then
+            local item = dragndrop.GetDroppable()[1].Item
+
+            if IsValid(item) then
+                self:DrawHover(item, w, h)
             end
         end
 
-        surface.SetDrawColor(HSVToColor(hue, saturation, lightness))
-        surface.DrawRect(0, 0, w, h)
+        SetDrawColor(self:GetTypeColor())
+        DrawOutlinedRect(0, 0, w, h, borderThickness)
     end
 
-    surface.SetDrawColor(self:GetTypeColor())
-    surface.DrawOutlinedRect(0, 0, w, h, borderThickness)
+    function ITEM:DrawHover(item, w, h)
+        SetDrawColor(self.HoveredColor)
+        DrawRect(0, 0, w, h)
+    end
+
+    function ITEM:DrawTitle(width, x, y)
+        SetFont("item_title_text")
+        local strW, strH = GetTextSize(self.ItemType)
+        local color = self:GetTypeColor()
+        local hue, saturation, lightness = ColorToHSL(color)
+
+        if lightness < 0.5 then
+            color = HSVToColor(hue, saturation, 0.5)
+        end
+
+        if width > strW then
+            DrawText(self.ItemType, "item_title_text", x, y - strH, color, TEXT_ALIGN_CENTER)
+        else
+            local str = string.Replace(self.ItemType, " ", "\n")
+            DrawText(str, "item_title_text", x, y - strH, color, TEXT_ALIGN_CENTER)
+        end
+    end
 end
 
 function ITEM:GetItemId()
@@ -243,24 +291,6 @@ function ITEM:IsValid()
     if self.__Deleted or self == inventorySystem.InvalidItem then return false end
 
     return true
-end
-
-function ITEM:DrawTitle(width, x, y)
-    surface.SetFont("item_title_text")
-    local strW, strH = surface.GetTextSize(self.ItemType)
-    local color = self:GetTypeColor()
-    local hue, saturation, lightness = ColorToHSL(color)
-
-    if lightness < 0.5 then
-        color = HSVToColor(hue, saturation, 0.5)
-    end
-
-    if width > strW then
-        draw.SimpleText(self.ItemType, "item_title_text", x, y, color, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    else
-        local str = string.Replace(self.ItemType, " ", "\n")
-        draw.DrawText(str, "item_title_text", x, y - strH, color, TEXT_ALIGN_CENTER)
-    end
 end
 
 function ITEM:GetInventory()
@@ -316,11 +346,11 @@ function ITEM:ReceiveDropped(item)
 end
 
 function ITEM:DrawItem(panel, width, height)
-    self:DrawBackground(width, height, false, 6)
-    self:DrawTitle(width, height / 2, 28)
-    local x1, y1 = panel:LocalToScreen(6, 36)
+    self:DrawBackground(width, height, false, 6, panel:IsHovered())
+    local x1, y1 = panel:LocalToScreen(6, 6)
     local x2, y2 = panel:LocalToScreen(width - 6, height - 6)
-    self:RenderModel(x1, y1, x2, y2)
+    self:RenderModel(x1 + 6, y1 + 28, x2 - 6, y2 - 6)
+    self:DrawTitle(width, height / 2, 28)
 end
 
 function ITEM:DrawItemDescBox(panel, width, height)
@@ -339,8 +369,8 @@ end
 function ITEM:OnDermaDescGain(panel)
     self.ParseObjTitle = markup.Parse("<font=Trebuchet24>" .. self.Name .. "</font>")
     self.ParseObjDesc = markup.Parse("<font=item_desc_text>" .. self.Description .. "</font>", 182)
-    panel:SetTall(58 + self.ParseObjDesc:GetHeight() + self.ParseObjTitle:GetHeight() + self.ExtraHeight)
-    panel:SetWide(math.max(self.ParseObjTitle:GetWidth(), 200))
+    panel.SizeY = 58 + self.ParseObjDesc:GetHeight() + self.ParseObjTitle:GetHeight() + self.ExtraHeight
+    panel.SizeX = math.max(self.ParseObjTitle:GetWidth(), 200)
 end
 
 DEFINE_BASECLASS("DPanel")

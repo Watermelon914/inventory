@@ -18,7 +18,7 @@ function inventoryMeta:SendFullUpdateToPlayer(plys)
 end
 
 function inventoryMeta:SendUpdateToPlayer(slots, plys)
-    if table.Count(plys) == 0 then return end
+    if not IsValid(plys) and table.Count(plys) <= 0 then return end
     local info = {}
 
     for _, slot in ipairs(slots) do

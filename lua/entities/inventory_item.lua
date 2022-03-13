@@ -72,7 +72,7 @@ function ENT:OnStateChanged(name, old, new)
 end
 
 function ENT:OnRemove()
-    if self.Item then
+    if self.Item and SERVER then
         inventorySystem.DeleteItem(self.Item)
     end
 end

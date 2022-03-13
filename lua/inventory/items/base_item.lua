@@ -18,7 +18,6 @@ ITEM.SlotsAllowed = {
 ITEM.TypeLightBGDifference = 0.2
 ITEM.TypeLightBGLighter = false
 ITEM.BGInvisiblie = true
-local CurrentClass = ITEM
 
 function ITEM:GetClass()
     return self.FileName
@@ -28,9 +27,6 @@ end
 function ITEM:Initialize()
     if CLIENT then
         self.ExtraHeight = self.ExtraHeight or 12
-        self.ParseObjTitle = markup.Parse("<font=Trebuchet24>" .. self.Name .. "</font>", self.DermaDesc.SizeX - 12)
-        self.ParseObjDesc = markup.Parse("<font=item_desc_text>" .. self.Description .. "</font>", self.DermaDesc.SizeX - 28)
-        self.DermaDesc.SizeY = 58 + self.ParseObjDesc:GetHeight() + self.ParseObjTitle:GetHeight() + self.ExtraHeight
         self.RenderedModel = ClientsideModel(self.Model, RENDERGROUP_OTHER)
         self.RenderedModel:SetNoDraw(true)
         self.RenderedModel:SetIK(false)
@@ -128,21 +124,17 @@ end
 
 function ITEM:OnNameChange(newValue)
     if CLIENT then
-        self.ParseObjTitle = markup.Parse("<font=Trebuchet24>" .. newValue .. "</font>")
-        self.DermaDesc.SizeX = math.max(self.ParseObjTitle:GetWidth() + 12, CurrentClass.DermaDesc.SizeX)
         self:UpdateDescBoxDimensions()
     end
 end
 
 function ITEM:OnDescriptionChange(newValue)
     if CLIENT then
-        self.ParseObjDesc = markup.Parse("<font=item_desc_text>" .. newValue .. "</font>", self.DermaDesc.SizeX - 28)
         self:UpdateDescBoxDimensions()
     end
 end
 
 function ITEM:UpdateDescBoxDimensions()
-    self.DermaDesc.SizeY = 58 + self.ParseObjDesc:GetHeight() + self.ParseObjTitle:GetHeight() + self.ExtraHeight
     local inventory = self.InventoryLocation
 
     if IsValid(inventory) and IsValid(inventory.InventoryUI) and inventory:GetItem(self.SlotLocation) == self then
@@ -248,7 +240,7 @@ function ITEM:GetItemId()
 end
 
 function ITEM:IsValid()
-    if self.__Deleted then return false end
+    if self.__Deleted or self == inventorySystem.InvalidItem then return false end
 
     return true
 end
@@ -341,28 +333,27 @@ function ITEM:DrawItemDescBox(panel, width, height)
     self.ParseObjDesc:Draw(14, 74, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
 end
 
-function ITEM.Derma:Paint(w, h)
-    local item = self:GetItem()
-    item:DrawItem(self, w, h)
+function ITEM:OnDermaGain(panel)
 end
 
-function ITEM.DermaDesc:Paint(w, h)
-    local item = self:GetItem()
-    item:DrawItemDescBox(self, w, h)
+function ITEM:OnDermaDescGain(panel)
+    self.ParseObjTitle = markup.Parse("<font=Trebuchet24>" .. self.Name .. "</font>")
+    self.ParseObjDesc = markup.Parse("<font=item_desc_text>" .. self.Description .. "</font>", 182)
+    panel:SetTall(58 + self.ParseObjDesc:GetHeight() + self.ParseObjTitle:GetHeight() + self.ExtraHeight)
+    panel:SetWide(math.max(self.ParseObjTitle:GetWidth(), 200))
 end
 
 DEFINE_BASECLASS("DPanel")
 
-function ITEM.Derma:OnMousePressed(keyCode)
+function ITEM:OnMousePressed(panel, keyCode)
     if keyCode == MOUSE_RIGHT then
         local menuToOpen = DermaMenu()
-        local item = self:GetItem()
-        item:GenerateRightClickMenu(menuToOpen)
-        if menuToOpen:ChildCount() <= 0 then return BaseClass.OnMousePressed(self, keyCode) end
+        self:GenerateRightClickMenu(menuToOpen)
+        if menuToOpen:ChildCount() <= 0 then return BaseClass.OnMousePressed(panel, keyCode) end
         menuToOpen:Open()
     end
 
-    return BaseClass.OnMousePressed(self, keyCode)
+    return BaseClass.OnMousePressed(panel, keyCode)
 end
 
 function ITEM:GenerateRightClickMenu(menu)

@@ -147,21 +147,17 @@ end
 
 function PANEL:SetItem(info)
     self.Item = info
-    local tables = {}
-    local foundTables = {}
-    local metatable = info.Derma
+    self.Item:OnDermaGain(self)
+end
 
-    while istable(metatable) and not foundTables[metatable] do
-        table.insert(tables, metatable)
-        foundTables[metatable] = true
-        metatable = getmetatable(metatable)
+function PANEL:Paint(width, height)
+    if IsValid(self.Item) then
+        self.Item:DrawItem(self, width, height)
     end
+end
 
-    for index, tbl in ipairs(table.Reverse(tables)) do
-        for name, value in pairs(tbl) do
-            self[name] = value
-        end
-    end
+function PANEL:OnMousePressed(keyCode)
+    if IsValid(self.Item) then return self.Item:OnMousePressed(self, keyCode) end
 end
 
 function PANEL:OnCursorEntered()
@@ -183,7 +179,7 @@ function PANEL:OnCursorMoved(x, y)
     end
 
     local mouseX, mouseY = input.GetCursorPos()
-    self.DescBox:SetPos(mouseX + 10, mouseY - 5 - self.DescBox.SizeY)
+    self.DescBox:SetPos(mouseX + 10, mouseY - 5 - self.DescBox:GetTall())
 end
 
 function PANEL:OnCursorExited()
@@ -217,25 +213,17 @@ PANEL.OnCursorEntered = function(self) end
 
 function PANEL:SetItem(info)
     self.Item = info
-    local tables = {}
-    local foundTables = {}
-    local metatable = info.DermaDesc
-
-    while istable(metatable) and not foundTables[metatable] do
-        table.insert(tables, metatable)
-        foundTables[metatable] = true
-        metatable = getmetatable(metatable)
-    end
-
-    for index, tbl in ipairs(table.Reverse(tables)) do
-        for name, value in pairs(tbl) do
-            self[name] = value
-        end
-    end
+    self.Item:OnDermaDescGain(self)
 end
 
 function PANEL:SetItemBox(panel)
     self.ItemBox = panel
+end
+
+function PANEL:Paint(width, height)
+    if IsValid(self.Item) then
+        self.Item:DrawItemDescBox(self, width, height)
+    end
 end
 
 function PANEL:GetItemBox()

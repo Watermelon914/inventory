@@ -6,9 +6,11 @@ end)
 net.Receive("inventorySystem.Update", function(len)
     local inventoryId = net.ReadUInt(16)
     local parent = net.ReadEntity()
+    if not parent then return end
     local data = util.JSONToTable(util.Decompress(net.ReadData(net.ReadUInt(16))))
     local inventory = inventorySystem.GetInventoryFromId(inventoryId)
     inventory:SetParent(parent)
+    parent.Inventory = inventory
     local contents = inventory.Contents
 
     for slot, id in pairs(data) do
@@ -27,12 +29,8 @@ net.Receive("inventorySystem.Update", function(len)
         end
     end
 
-    for slot, info in pairs(contents) do
-        print(slot, info)
-    end
-
     if parent == LocalPlayer() and inventorySystem.InitializedUI ~= true then
-        inventorySystem.GenerateInventoryUI(inventorySystem, inventory)
+        inventorySystem.GenerateInventoryUI(inventory)
         inventory.InventoryUI = inventorySystem.holdingFrame
     end
 
@@ -56,7 +54,7 @@ net.Receive("inventorySystem.UpdateItem", function(len)
         end
     end
 
-    if not item.__Initialized then
+    if item.__Initialized == nil then
         item:Initialize()
     end
 

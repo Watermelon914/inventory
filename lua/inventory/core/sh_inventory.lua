@@ -15,8 +15,10 @@ function inventoryMeta:SetParent(entity)
 
     self.Parent = entity
 
-    self.Parent:CallOnRemove("inventory" .. self:GetInventoryId(), function()
-        self:Remove()
+    self.Parent:CallOnRemove("inventory" .. self:GetInventoryId(), function(ent)
+        if self.Parent == ent then
+            self:Remove()
+        end
     end)
 
     if SERVER then
@@ -139,7 +141,13 @@ end
 
 function inventoryMeta:RemoveItem(slot)
     local item = self.Contents[slot]
-    if not IsValid(item) then return end
+
+    if not IsValid(item) then
+        self.Contents[slot] = nil
+
+        return
+    end
+
     item:RemoveFromInventory(self, slot)
     self.Contents[slot] = nil
 

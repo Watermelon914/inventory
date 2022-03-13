@@ -22,6 +22,7 @@ function ITEM:Initialize()
 end
 
 function ITEM:GenerateRightClickMenu(menu)
+    PrintTable(self)
     BaseClass.GenerateRightClickMenu(self, menu)
     local panel = menu:AddOption("Use", inventorySystem.CreateAction(self, "use"))
     panel:SetIcon("icon16/accept.png")

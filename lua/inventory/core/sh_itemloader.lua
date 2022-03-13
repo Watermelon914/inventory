@@ -21,12 +21,6 @@ for _, item in ipairs(result) do
     ITEM.Name = "Unnamed"
     ITEM.Description = "No description available"
     ITEM.Base = "base_item"
-    ITEM.Derma = {}
-    ITEM.Derma.__index = ITEM.Derma
-    ITEM.DermaDesc = {}
-    ITEM.DermaDesc.__index = ITEM.DermaDesc
-    ITEM.DermaDesc.SizeX = 200
-    ITEM.DermaDesc.SizeY = 250
     AddCSLuaFile(path .. item)
     include(path .. item)
     ITEM.FileName = fileName -- Just in case they tried overriding it
@@ -42,16 +36,12 @@ end
 for fileName, item in pairs(inventorySystem.items) do
     if inventorySystem.items[item.Base] then
         setmetatable(item, inventorySystem.items[item.Base])
-        setmetatable(item.Derma, inventorySystem.items[item.Base].Derma)
-        setmetatable(item.DermaDesc, inventorySystem.items[item.Base].DermaDesc)
     end
 end
 
 ITEM = {}
-ITEM.DermaDesc = {}
-ITEM.Derma = {}
 --  Prevents errors during lua refreshes, but won't affect the last loaded item
-inventorySystem.InvalidItem = {}
+inventorySystem.InvalidItem = inventorySystem.InvalidItem or {}
 setmetatable(inventorySystem.InvalidItem, inventorySystem.BaseItem)
 hook.Run("PostItemLoaded")
 
@@ -75,10 +65,7 @@ function inventorySystem.CreateItem(className, initialize, ...)
         return
     end
 
-    local newInstance = {
-        Derma = {},
-        DermaDesc = {}
-    }
+    local newInstance = {}
 
     if SERVER then
         newInstance.__ItemId = inventorySystem.__itemidtracker
@@ -87,8 +74,6 @@ function inventorySystem.CreateItem(className, initialize, ...)
     end
 
     setmetatable(newInstance, class)
-    setmetatable(newInstance.Derma, class.Derma)
-    setmetatable(newInstance.DermaDesc, class.DermaDesc)
 
     if initialize then
         newInstance:Initialize(...)

@@ -310,3 +310,7 @@ hook.Add("OnSpawnMenuOpen", inventorySystem, function(self)
         end
     end
 end)
+
+if inventorySystem.InitializedUI == true then
+    inventorySystem.GenerateInventoryUI(LocalPlayer():GetInventory())
+end

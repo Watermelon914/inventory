@@ -5,6 +5,13 @@ function containerSystem:IsValid()
     return inventorySystem.containerSystem == self
 end
 
+function inventorySystem.MakeStackModel(model, offset)
+    return {
+        model = model,
+        offset = offset or Vector(0, 0, 0)
+    }
+end
+
 AddCSLuaFile("cl_container.lua")
 AddCSLuaFile("container_editor.lua")
 

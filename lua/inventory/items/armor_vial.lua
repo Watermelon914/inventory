@@ -36,7 +36,7 @@ function ITEM:OnActionReceived(action, ply)
 end
 
 function ITEM:HealPlayer(ply)
-    if ply:Health() >= ply:GetMaxHealth() then
+    if ply:Armor() >= ply:GetMaxArmor() then
         ply:EmitSound("items/suitchargeno1.wav")
 
         return

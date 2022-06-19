@@ -1,3 +1,5 @@
+CreateConVar("inventory_make_weapons_into_items", 1, FCVAR_NOTIFY, "Whether weapons are handled by the inventory system.")
+
 hook.Add("PlayerInitialSpawn", inventorySystem, function(self, ply, transition)
     local playerInventory = ply:CreateInventory()
     playerInventory:SetParent(ply)
@@ -18,6 +20,7 @@ local ignoreWeapons = {
 
 hook.Add("PlayerCanPickupWeapon", inventorySystem, function(self, ply, weapon)
     if IsValid(weapon.Item) then return end
+    if not GetConVar("inventory_make_weapons_into_items"):GetBool() then return end
     if ignoreWeapons[weapon:GetClass()] then return end
     -- Non-scripted weapons like the default hl2 weapons
     if not weapons.GetStored(weapon:GetClass()) then return end
